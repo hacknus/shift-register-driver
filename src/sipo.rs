@@ -61,7 +61,7 @@ macro_rules! ShiftRegisterBuilder {
             fn update(&self, index: usize, command: bool) -> Result<(), ()>{
                 self.output_state.borrow_mut()[index] = command;
                 let output_state = self.output_state.borrow();
-                self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                self.latch.borrow_mut().set_high().map_err(|_e| ())?;
 
                 for i in 1..=output_state.len() {
                     if output_state[output_state.len() - i] {
@@ -73,7 +73,7 @@ macro_rules! ShiftRegisterBuilder {
                     self.clock.borrow_mut().set_low().map_err(|_e| ())?;
                 }
 
-                self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                self.latch.borrow_mut().set_low().map_err(|_e| ())?;
                 Ok(())
             }
         }

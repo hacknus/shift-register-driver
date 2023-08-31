@@ -65,9 +65,9 @@ macro_rules! ShiftRegisterBuilder {
 
                 for i in 1..=output_state.len() {
                     if output_state[output_state.len() - i] {
-                        self.data.borrow_mut().set_high().map_err(|_e| ())?;
-                    } else {
                         self.data.borrow_mut().set_low().map_err(|_e| ())?;
+                    } else {
+                        self.data.borrow_mut().set_high().map_err(|_e| ())?;
                     }
                     self.clock.borrow_mut().set_high().map_err(|_e| ())?;
                     self.clock.borrow_mut().set_low().map_err(|_e| ())?;

@@ -38,7 +38,7 @@ impl OutputPin for ShiftRegisterPin<'_>
     }
 }
 
-macro_rules! ShiftRegisterBuilder {
+macro_rules! shift_register_builder {
     ($name: ident, $size: expr) => {
         /// Serial-in parallel-out shift register
         pub struct $name<Pin1, Pin2, Pin3>
@@ -145,22 +145,22 @@ macro_rules! ShiftRegisterBuilder {
     }
 }
 
-ShiftRegisterBuilder!(ShiftRegister8, 8);
-ShiftRegisterBuilder!(ShiftRegister16, 16);
-ShiftRegisterBuilder!(ShiftRegister24, 24);
-ShiftRegisterBuilder!(ShiftRegister32, 32);
-ShiftRegisterBuilder!(ShiftRegister40, 40);
-ShiftRegisterBuilder!(ShiftRegister48, 48);
-ShiftRegisterBuilder!(ShiftRegister56, 56);
-ShiftRegisterBuilder!(ShiftRegister64, 64);
-ShiftRegisterBuilder!(ShiftRegister72, 72);
-ShiftRegisterBuilder!(ShiftRegister80, 80);
-ShiftRegisterBuilder!(ShiftRegister88, 88);
-ShiftRegisterBuilder!(ShiftRegister96, 96);
-ShiftRegisterBuilder!(ShiftRegister104, 104);
-ShiftRegisterBuilder!(ShiftRegister112, 112);
-ShiftRegisterBuilder!(ShiftRegister120, 120);
-ShiftRegisterBuilder!(ShiftRegister128, 128);
+shift_register_builder!(ShiftRegister8, 8);
+shift_register_builder!(ShiftRegister16, 16);
+shift_register_builder!(ShiftRegister24, 24);
+shift_register_builder!(ShiftRegister32, 32);
+shift_register_builder!(ShiftRegister40, 40);
+shift_register_builder!(ShiftRegister48, 48);
+shift_register_builder!(ShiftRegister56, 56);
+shift_register_builder!(ShiftRegister64, 64);
+shift_register_builder!(ShiftRegister72, 72);
+shift_register_builder!(ShiftRegister80, 80);
+shift_register_builder!(ShiftRegister88, 88);
+shift_register_builder!(ShiftRegister96, 96);
+shift_register_builder!(ShiftRegister104, 104);
+shift_register_builder!(ShiftRegister112, 112);
+shift_register_builder!(ShiftRegister120, 120);
+shift_register_builder!(ShiftRegister128, 128);
 
 /// 8 output serial-in parallel-out shift register
 pub type ShiftRegister<Pin1, Pin2, Pin3> = ShiftRegister8<Pin1, Pin2, Pin3>;

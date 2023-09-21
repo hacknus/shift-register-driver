@@ -50,6 +50,7 @@ macro_rules! ShiftRegisterBuilder {
             latch: RefCell<Pin2>,
             data: RefCell<Pin3>,
             output_state: RefCell<[bool; $size]>,
+            inverted: bool,
         }
 
         impl<Pin1, Pin2, Pin3> ShiftRegisterInternal for $name<Pin1, Pin2, Pin3>
@@ -61,13 +62,25 @@ macro_rules! ShiftRegisterBuilder {
             fn update(&self, index: usize, command: bool) -> Result<(), ()>{
                 self.output_state.borrow_mut()[index] = command;
                 let output_state = self.output_state.borrow();
-                self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                if self.inverted {
+                    self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                } else {
+                    self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                }
 
                 for i in 1..=output_state.len() {
                     if output_state[output_state.len() - i] {
-                        self.data.borrow_mut().set_low().map_err(|_e| ())?;
+                        if self.inverted {
+                            self.data.borrow_mut().set_low().map_err(|_e| ())?;
+                        } else {
+                            self.data.borrow_mut().set_high().map_err(|_e| ())?;
+                        }
                     } else {
-                        self.data.borrow_mut().set_high().map_err(|_e| ())?;
+                        if self.inverted {
+                            self.data.borrow_mut().set_high().map_err(|_e| ())?;
+                        } else {
+                            self.data.borrow_mut().set_low().map_err(|_e| ())?;
+                        }
                     }
                     self.clock.borrow_mut().set_high().map_err(|_e| ())?;
                     self.clock.borrow_mut().set_low().map_err(|_e| ())?;
@@ -91,7 +104,14 @@ macro_rules! ShiftRegisterBuilder {
                     latch: RefCell::new(latch),
                     data: RefCell::new(data),
                     output_state: RefCell::new([false; $size]),
+                    inverted: false
                 }
+            }
+
+            /// Inverts the latch output pin. This depends on which shift register is used.
+            pub fn inverted(mut self, state: bool) ->  Self {
+                self.inverted = state;
+                self
             }
 
             /// Get embedded-hal output pins to control the shift register outputs
@@ -117,7 +137,7 @@ macro_rules! ShiftRegisterBuilder {
 
             /// Consume the shift register and return the original clock, latch, and data output pins
             pub fn release(self) -> (Pin1, Pin2, Pin3) {
-                let Self{clock, latch, data, output_state: _} = self;
+                let Self{clock, latch, data, output_state: _, inverted: _} = self;
                 (clock.into_inner(), latch.into_inner(), data.into_inner())
             }
         }

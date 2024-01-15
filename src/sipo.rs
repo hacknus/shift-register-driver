@@ -10,21 +10,21 @@ trait ShiftRegisterInternal {
 }
 
 /// Output pin of the shift register
-pub struct ShiftRegisterPin<'a>
-{
+pub struct ShiftRegisterPin<'a> {
     shift_register: &'a dyn ShiftRegisterInternal,
     index: usize,
 }
 
-impl<'a> ShiftRegisterPin<'a>
-{
+impl<'a> ShiftRegisterPin<'a> {
     fn new(shift_register: &'a dyn ShiftRegisterInternal, index: usize) -> Self {
-        ShiftRegisterPin { shift_register, index }
+        ShiftRegisterPin {
+            shift_register,
+            index,
+        }
     }
 }
 
-impl OutputPin for ShiftRegisterPin<'_>
-{
+impl OutputPin for ShiftRegisterPin<'_> {
     type Error = ();
 
     fn set_low(&mut self) -> Result<(), Self::Error> {
@@ -42,9 +42,10 @@ macro_rules! shift_register_builder {
     ($name: ident, $size: expr) => {
         /// Serial-in parallel-out shift register
         pub struct $name<Pin1, Pin2, Pin3>
-            where Pin1: OutputPin,
-                  Pin2: OutputPin,
-                  Pin3: OutputPin
+        where
+            Pin1: OutputPin,
+            Pin2: OutputPin,
+            Pin3: OutputPin,
         {
             clock: RefCell<Pin1>,
             latch: RefCell<Pin2>,
@@ -54,12 +55,13 @@ macro_rules! shift_register_builder {
         }
 
         impl<Pin1, Pin2, Pin3> ShiftRegisterInternal for $name<Pin1, Pin2, Pin3>
-            where Pin1: OutputPin,
-                  Pin2: OutputPin,
-                  Pin3: OutputPin
+        where
+            Pin1: OutputPin,
+            Pin2: OutputPin,
+            Pin3: OutputPin,
         {
             /// Sets the value of the shift register output at `index` to value `command`
-            fn update(&self, index: usize, command: bool) -> Result<(), ()>{
+            fn update(&self, index: usize, command: bool) -> Result<(), ()> {
                 self.output_state.borrow_mut()[index] = command;
                 let output_state = self.output_state.borrow();
                 if self.inverted {
@@ -86,16 +88,20 @@ macro_rules! shift_register_builder {
                     self.clock.borrow_mut().set_low().map_err(|_e| ())?;
                 }
 
-                self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                if self.inverted {
+                    self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                } else {
+                    self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                }
                 Ok(())
             }
         }
 
-
         impl<Pin1, Pin2, Pin3> $name<Pin1, Pin2, Pin3>
-            where Pin1: OutputPin,
-                  Pin2: OutputPin,
-                  Pin3: OutputPin
+        where
+            Pin1: OutputPin,
+            Pin2: OutputPin,
+            Pin3: OutputPin,
         {
             /// Creates a new SIPO shift register from clock, latch, and data output pins
             pub fn new(clock: Pin1, latch: Pin2, data: Pin3) -> Self {
@@ -104,25 +110,23 @@ macro_rules! shift_register_builder {
                     latch: RefCell::new(latch),
                     data: RefCell::new(data),
                     output_state: RefCell::new([false; $size]),
-                    inverted: false
+                    inverted: false,
                 }
             }
 
             /// Inverts the latch output pin. This depends on which shift register is used.
-            pub fn inverted(mut self, state: bool) ->  Self {
+            pub fn inverted(mut self, state: bool) -> Self {
                 self.inverted = state;
                 self
             }
 
             /// Get embedded-hal output pins to control the shift register outputs
-            pub fn decompose(&self) ->  [ShiftRegisterPin; $size] {
-
+            pub fn decompose(&self) -> [ShiftRegisterPin; $size] {
                 // Create an uninitialized array of `MaybeUninit`. The `assume_init` is
                 // safe because the type we are claiming to have initialized here is a
                 // bunch of `MaybeUninit`s, which do not require initialization.
-                let mut pins:  [MaybeUninit<ShiftRegisterPin>; $size] = unsafe {
-                    MaybeUninit::uninit().assume_init()
-                };
+                let mut pins: [MaybeUninit<ShiftRegisterPin>; $size] =
+                    unsafe { MaybeUninit::uninit().assume_init() };
 
                 // Dropping a `MaybeUninit` does nothing, so if there is a panic during this loop,
                 // we have a memory leak, but there is no memory safety issue.
@@ -137,12 +141,17 @@ macro_rules! shift_register_builder {
 
             /// Consume the shift register and return the original clock, latch, and data output pins
             pub fn release(self) -> (Pin1, Pin2, Pin3) {
-                let Self{clock, latch, data, output_state: _, inverted: _} = self;
+                let Self {
+                    clock,
+                    latch,
+                    data,
+                    output_state: _,
+                    inverted: _,
+                } = self;
                 (clock.into_inner(), latch.into_inner(), data.into_inner())
             }
         }
-
-    }
+    };
 }
 
 shift_register_builder!(ShiftRegister8, 8);

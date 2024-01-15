@@ -51,7 +51,8 @@ macro_rules! shift_register_builder {
             latch: RefCell<Pin2>,
             data: RefCell<Pin3>,
             output_state: RefCell<[bool; $size]>,
-            inverted: bool,
+            input_inverted: bool,
+            latch_inverted: bool,
         }
 
         impl<Pin1, Pin2, Pin3> ShiftRegisterInternal for $name<Pin1, Pin2, Pin3>
@@ -65,17 +66,20 @@ macro_rules! shift_register_builder {
                 self.output_state.borrow_mut()[index] = command;
                 let output_state = self.output_state.borrow();
 
-                self.latch.borrow_mut().set_low().map_err(|_e| ())?;
-
+                if self.latch_inverted {
+                    self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                } else {
+                    self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                }
                 for i in 1..=output_state.len() {
                     if output_state[output_state.len() - i] {
-                        if self.inverted {
+                        if self.input_inverted {
                             self.data.borrow_mut().set_low().map_err(|_e| ())?;
                         } else {
                             self.data.borrow_mut().set_high().map_err(|_e| ())?;
                         }
                     } else {
-                        if self.inverted {
+                        if self.input_inverted {
                             self.data.borrow_mut().set_high().map_err(|_e| ())?;
                         } else {
                             self.data.borrow_mut().set_low().map_err(|_e| ())?;
@@ -85,7 +89,11 @@ macro_rules! shift_register_builder {
                     self.clock.borrow_mut().set_low().map_err(|_e| ())?;
                 }
 
-                self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                if self.latch_inverted {
+                    self.latch.borrow_mut().set_low().map_err(|_e| ())?;
+                } else {
+                    self.latch.borrow_mut().set_high().map_err(|_e| ())?;
+                }
                 Ok(())
             }
         }
@@ -103,13 +111,20 @@ macro_rules! shift_register_builder {
                     latch: RefCell::new(latch),
                     data: RefCell::new(data),
                     output_state: RefCell::new([false; $size]),
-                    inverted: false,
+                    input_inverted: false,
+                    latch_inverted: false,
                 }
             }
 
+            /// Inverts the pin states. This depends on which shift register is used.
+            pub fn input_inverted(mut self, state: bool) -> Self {
+                self.input_inverted = state;
+                self
+            }
+
             /// Inverts the latch output pin. This depends on which shift register is used.
-            pub fn inverted(mut self, state: bool) -> Self {
-                self.inverted = state;
+            pub fn latch_inverted(mut self, state: bool) -> Self {
+                self.latch_inverted = state;
                 self
             }
 
@@ -139,7 +154,8 @@ macro_rules! shift_register_builder {
                     latch,
                     data,
                     output_state: _,
-                    inverted: _,
+                    input_inverted: _,
+                    latch_inverted: _,
                 } = self;
                 (clock.into_inner(), latch.into_inner(), data.into_inner())
             }

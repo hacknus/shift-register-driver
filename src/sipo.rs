@@ -51,7 +51,7 @@ macro_rules! shift_register_builder {
             latch: RefCell<Pin2>,
             data: RefCell<Pin3>,
             output_state: RefCell<[bool; $size]>,
-            input_inverted: bool,
+            state_inverted: bool,
             latch_inverted: bool,
         }
 
@@ -73,13 +73,13 @@ macro_rules! shift_register_builder {
                 }
                 for i in 1..=output_state.len() {
                     if output_state[output_state.len() - i] {
-                        if self.input_inverted {
+                        if self.state_inverted {
                             self.data.borrow_mut().set_low().map_err(|_e| ())?;
                         } else {
                             self.data.borrow_mut().set_high().map_err(|_e| ())?;
                         }
                     } else {
-                        if self.input_inverted {
+                        if self.state_inverted {
                             self.data.borrow_mut().set_high().map_err(|_e| ())?;
                         } else {
                             self.data.borrow_mut().set_low().map_err(|_e| ())?;
@@ -111,14 +111,14 @@ macro_rules! shift_register_builder {
                     latch: RefCell::new(latch),
                     data: RefCell::new(data),
                     output_state: RefCell::new([false; $size]),
-                    input_inverted: false,
+                    state_inverted: false,
                     latch_inverted: false,
                 }
             }
 
             /// Inverts the pin states. This depends on which shift register is used.
-            pub fn input_inverted(mut self, state: bool) -> Self {
-                self.input_inverted = state;
+            pub fn state_inverted(mut self, state: bool) -> Self {
+                self.state_inverted = state;
                 self
             }
 
@@ -154,7 +154,7 @@ macro_rules! shift_register_builder {
                     latch,
                     data,
                     output_state: _,
-                    input_inverted: _,
+                    state_inverted: _,
                     latch_inverted: _,
                 } = self;
                 (clock.into_inner(), latch.into_inner(), data.into_inner())
